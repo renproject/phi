@@ -36,28 +36,26 @@ func (pinger *PerpetualPinger) Reduce(message phi.Message) phi.Message {
 	switch message.(type) {
 	case Begin:
 		fmt.Println("Pinger beginning...")
-		go func() {
-			pong, ok := pinger.ponger.SendSync(Ping{})
-			if !ok {
-				panic("failed to send ping")
-			}
-			pinger.task.Send(pong)
-		}()
+		pinger.pingAsync()
 		return nil
 	case Pong:
 		fmt.Println("Received Pong!")
 		time.Sleep(500 * time.Millisecond)
-		go func() {
-			pong, ok := pinger.ponger.SendSync(Ping{})
-			if !ok {
-				panic("failed to send ping")
-			}
-			pinger.task.Send(pong)
-		}()
+		pinger.pingAsync()
 		return nil
 	default:
 		panic("unexpected message type")
 	}
+}
+
+func (pinger *PerpetualPinger) pingAsync() {
+	go func() {
+		pong, ok := pinger.ponger.SendSync(Ping{})
+		if !ok {
+			panic("failed to send ping")
+		}
+		pinger.task.Send(pong)
+	}()
 }
 
 type Ponger struct{}
