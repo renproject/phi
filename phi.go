@@ -70,7 +70,9 @@ func (task *task) SendSync(message Message) (Message, bool) {
 	}
 }
 
-type Message interface{}
+type Message interface {
+	IsMessage()
+}
 
 type MessageSync struct {
 	message   Message
