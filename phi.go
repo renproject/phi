@@ -4,6 +4,7 @@ import "context"
 
 type Runner interface {
 	Run(context.Context)
+	Terminate()
 }
 
 type Sender interface {
@@ -33,10 +34,12 @@ func NewTask(reducer Reducer, cap int) Task {
 }
 
 func (task *task) Run(ctx context.Context) {
-	defer close(task.done)
 	for {
 		select {
 		case <-ctx.Done():
+			close(task.done)
+			return
+		case <-task.done:
 			return
 		case message := <-task.input:
 			task.reducer.Reduce(message)
@@ -44,6 +47,10 @@ func (task *task) Run(ctx context.Context) {
 			message.responder <- task.reducer.Reduce(message.message)
 		}
 	}
+}
+
+func (task *task) Terminate() {
+	close(task.done)
 }
 
 func (task *task) Send(message Message) bool {
