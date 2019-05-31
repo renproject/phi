@@ -7,31 +7,26 @@ import (
 	"github.com/renproject/phi"
 )
 
-type Begin struct{}
-
-func (Begin) IsMessage() {}
-
-type Ping struct{}
-
-func (Ping) IsMessage() {}
-
-type Pong struct{}
-
-func (Pong) IsMessage() {}
-
+// PerpetualPinger represents an object that sends pings, but in addition will
+// send another ping after each pong it receives.
 type PerpetualPinger struct {
 	ponger, task phi.Task
 }
 
+// NewPerpetualPinger returns a new `PerpetualPinger`.
 func NewPerpetualPinger() PerpetualPinger {
 	return PerpetualPinger{nil, nil}
 }
 
+// CompleteSetup givens the `PerpetualPinger` references to a `Ponger` task as
+// well as its own parent task. If this method is not called, the
+// `PerpetualPinger` will not function correctly.
 func (pinger *PerpetualPinger) CompleteSetup(ponger, task phi.Task) {
 	pinger.ponger = ponger
 	pinger.task = task
 }
 
+// Reduce implements the `phi.Reducer` interface.
 func (pinger *PerpetualPinger) Reduce(message phi.Message) phi.Message {
 	switch message.(type) {
 	case Begin:
@@ -58,13 +53,16 @@ func (pinger *PerpetualPinger) pingAsync() {
 	}()
 }
 
+// Ponger represents an object that sends a pong on receipt of a ping.
 type Ponger struct{}
 
+// NewPonger returns a new `Ponger` object.
 func NewPonger() Ponger {
 	return Ponger{}
 }
 
-func (ponger Ponger) Reduce(message phi.Message) phi.Message {
+// Reduce implements the `phi.Reducer` interface.
+func (ponger *Ponger) Reduce(message phi.Message) phi.Message {
 	switch message.(type) {
 	case Ping:
 		fmt.Println("Received Ping!")
