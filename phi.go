@@ -2,6 +2,21 @@ package phi
 
 import "context"
 
+type Message interface {
+	IsMessage()
+}
+
+type MessageSync struct {
+	message   Message
+	responder chan Message
+}
+
+type MessageBatch struct {
+	Messages []Message
+}
+
+func (MessageBatch) IsMessage() {}
+
 type Runner interface {
 	Run(context.Context)
 	Terminate()
@@ -75,15 +90,6 @@ func (task *task) SendSync(message Message) (Message, bool) {
 	default:
 		return nil, false
 	}
-}
-
-type Message interface {
-	IsMessage()
-}
-
-type MessageSync struct {
-	message   Message
-	responder chan Message
 }
 
 type Reducer interface {
