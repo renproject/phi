@@ -1,22 +1,32 @@
 package main
 
-import "github.com/renproject/phi"
+import (
+	"fmt"
 
+	"github.com/renproject/phi"
+)
+
+// Player represents one player in the consensus algorithm.
 type Player struct {
 	num, id, players, currentMax uint
 	seen                         map[uint]uint
 }
 
+// NewPlayer returns a new `Player` with ID `id` and internal number `num` in
+// an execution where there are `players` other players. The ID represents the
+// index for routing.
 func NewPlayer(id, num, players uint) Player {
 	seen := map[uint]uint{}
 	seen[id] = num
 	return Player{num: num, id: id, players: players, currentMax: num, seen: seen}
 }
 
+// ID returns the routing ID for the given player.
 func (player *Player) ID() uint {
 	return player.id
 }
 
+// Reduce implements the `phi.Reducer` interface.
 func (player *Player) Reduce(message phi.Message) phi.Message {
 	switch message := message.(type) {
 	case Begin:
@@ -30,12 +40,12 @@ func (player *Player) Reduce(message phi.Message) phi.Message {
 			}
 			if uint(len(player.seen)) == player.players {
 				done := Done{player: player.id, max: player.currentMax}
-				return MessageBatch{[]phi.Message{message, done}}
+				return phi.MessageBatch{Messages: []phi.Message{message, done}}
 			}
 			return message
 		}
 		return nil
 	default:
-		panic("unexpected message type")
+		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
 }

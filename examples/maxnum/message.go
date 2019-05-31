@@ -1,13 +1,5 @@
 package main
 
-import "github.com/renproject/phi"
-
-type MessageBatch struct {
-	messages []phi.Message
-}
-
-func (MessageBatch) IsMessage() {}
-
 type Begin struct{}
 
 func (Begin) IsMessage() {}
