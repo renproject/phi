@@ -39,7 +39,7 @@ func (pinger *PerpetualPinger) Reduce(message phi.Message) phi.Message {
 		pinger.pingAsync()
 		return nil
 	default:
-		panic("unexpected message type")
+		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
 }
 
@@ -69,6 +69,6 @@ func (ponger *Ponger) Reduce(message phi.Message) phi.Message {
 		time.Sleep(500 * time.Millisecond)
 		return Pong{}
 	default:
-		panic("unexpected message type")
+		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
 }
