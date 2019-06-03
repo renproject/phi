@@ -21,6 +21,7 @@ type Router struct {
 	routeTable          map[uint][]uint
 	result, resultsSeen uint
 	resultWriter        chan Result
+	terminated          bool
 }
 
 // NewRouter returns a new `Router` along with a channel that the result of the
@@ -40,6 +41,7 @@ func NewRouter(routeTable map[uint][]uint, players map[uint]phi.Task) (Router, c
 		result:       0,
 		resultsSeen:  0,
 		resultWriter: resultWriter,
+		terminated:   false,
 	}, resultWriter
 }
 
@@ -53,7 +55,7 @@ func (router *Router) SetTask(task phi.Task) {
 // Reduce implements the `phi.Reducer` interface.
 func (router *Router) Reduce(message phi.Message) phi.Message {
 	// A nil message means that nothing needs to be routed
-	if message == nil {
+	if message == nil || router.terminated {
 		return nil
 	}
 
@@ -73,10 +75,10 @@ func (router *Router) Reduce(message phi.Message) phi.Message {
 		} else {
 			if message.max != router.result {
 				router.resultWriter <- Result{Success: false}
-				router.terminate()
+				router.terminated = true
 			} else if router.resultsSeen == uint(len(router.players)) {
 				router.resultWriter <- Result{Max: router.result, Players: uint(len(router.players)), Success: true}
-				router.terminate()
+				router.terminated = true
 			}
 		}
 	case phi.MessageBatch:
@@ -88,13 +90,6 @@ func (router *Router) Reduce(message phi.Message) phi.Message {
 	}
 
 	return nil
-}
-
-func (router *Router) terminate() {
-	for _, player := range router.players {
-		player.Terminate()
-	}
-	router.task.Terminate()
 }
 
 func (router *Router) sendAsync(player phi.Task, message phi.Message) {
