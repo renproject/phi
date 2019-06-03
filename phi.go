@@ -48,12 +48,10 @@ func NewTask(reducer Reducer, cap int) Task {
 }
 
 func (task *task) Run(ctx context.Context) {
+	defer close(task.done)
 	for {
 		select {
 		case <-ctx.Done():
-			close(task.done)
-			return
-		case <-task.done:
 			return
 		case message := <-task.input:
 			task.reducer.Reduce(message)
