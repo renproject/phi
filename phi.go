@@ -19,7 +19,6 @@ func (MessageBatch) IsMessage() {}
 
 type Runner interface {
 	Run(context.Context)
-	Terminate()
 }
 
 type Sender interface {
@@ -62,10 +61,6 @@ func (task *task) Run(ctx context.Context) {
 			message.responder <- task.reducer.Reduce(message.message)
 		}
 	}
-}
-
-func (task *task) Terminate() {
-	close(task.done)
 }
 
 func (task *task) Send(message Message) bool {
