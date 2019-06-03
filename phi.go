@@ -31,6 +31,10 @@ type Task interface {
 	Sender
 }
 
+type Reducer interface {
+	Reduce(Message) Message
+}
+
 type task struct {
 	reducer   Reducer
 	input     chan Message
@@ -83,8 +87,4 @@ func (task *task) SendSync(message Message) (Message, bool) {
 	default:
 		return nil, false
 	}
-}
-
-type Reducer interface {
-	Reduce(Message) Message
 }
