@@ -23,7 +23,7 @@ func main() {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	// Parameters for the algorithm
-	numPlayers := uint(3)
+	numPlayers := uint(100)
 	max := uint(1000)
 
 	// Make players
