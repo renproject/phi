@@ -40,7 +40,7 @@ func (player *Player) Reduce(message phi.Message) phi.Message {
 			}
 			if uint(len(player.seen)) == player.players {
 				done := Done{player: player.id, max: player.currentMax}
-				return phi.MessageBatch{Messages: []phi.Message{message, done}}
+				return phi.Messages{Messages: []phi.Message{message, done}}
 			}
 			return message
 		}

@@ -81,10 +81,6 @@ func (router *Router) Reduce(message phi.Message) phi.Message {
 				router.terminated = true
 			}
 		}
-	case phi.MessageBatch:
-		for _, msg := range message.Messages {
-			router.Reduce(msg)
-		}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
@@ -94,11 +90,19 @@ func (router *Router) Reduce(message phi.Message) phi.Message {
 
 func (router *Router) sendAsync(player phi.Task, message phi.Message) {
 	go func() {
-		response, ok := player.SendSync(message)
-		if ok {
-			// Retry until the message is successfully sent
-			for !router.task.Send(response) {
+		responder, ok := player.Send(message)
+		// Ensure that the message is sent
+		for !ok {
+			time.Sleep(10 * time.Millisecond)
+			responder, ok = player.Send(message)
+		}
+		messages := <-responder
+		for _, m := range messages.Messages {
+			_, ok = router.task.Send(m)
+			// Ensure that the responses get received
+			for !ok {
 				time.Sleep(10 * time.Millisecond)
+				_, ok = router.task.Send(m)
 			}
 		}
 	}()
