@@ -116,7 +116,7 @@ func (task *task) Send(message Message) (<-chan Messages, bool) {
 
 // reduce will handle the reduction of a given message for a task. It is
 // assumed that the message is flattened. It will always return a `Messages`
-// type which contains the responses of the reducre for the given emssage(s).
+// type which contains the responses of the reducer for the given message(s).
 // The returned `Messages` is flattened.
 func (task *task) reduce(message Message) Messages {
 	messages := Messages{Messages: []Message{}}
