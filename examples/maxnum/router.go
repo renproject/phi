@@ -97,7 +97,7 @@ func (router *Router) sendAsync(player phi.Task, message phi.Message) {
 			responder, ok = player.Send(message)
 		}
 		messages := <-responder
-		for _, m := range messages.Messages {
+		for _, m := range messages {
 			_, ok = router.task.Send(m)
 			// Ensure that the responses get received
 			for !ok {

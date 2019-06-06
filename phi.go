@@ -26,9 +26,7 @@ type messageWithResponder struct {
 // processed. If a task needs to respond with more than one message, and it is
 // important that these messages are processed together, then a custom
 // container type should be created and handled appropriately in the reducer.
-type Messages struct {
-	Messages []Message
-}
+type Messages []Message
 
 // IsMessage implements the Message interface.
 func (Messages) IsMessage() {}
@@ -119,14 +117,14 @@ func (task *task) Send(message Message) (<-chan Messages, bool) {
 // type which contains the responses of the reducer for the given message(s).
 // The returned `Messages` is flattened.
 func (task *task) reduce(message Message) Messages {
-	messages := Messages{Messages: []Message{}}
+	messages := Messages{}
 	switch message := message.(type) {
 	case Messages:
-		for _, msg := range message.Messages {
-			messages.Messages = append(messages.Messages, task.reducer.Reduce(msg))
+		for _, msg := range message {
+			messages = append(messages, task.reducer.Reduce(msg))
 		}
 	default:
-		messages.Messages = append(messages.Messages, task.reducer.Reduce(message))
+		messages = append(messages, task.reducer.Reduce(message))
 	}
 	return flatten(messages).(Messages)
 }
@@ -139,17 +137,17 @@ func (task *task) reduce(message Message) Messages {
 func flatten(message Message) Message {
 	switch message := message.(type) {
 	case Messages:
-		msgs := []Message{}
-		for _, msg := range message.Messages {
+		msgs := Messages{}
+		for _, msg := range message {
 			m := flatten(msg)
 			switch m := m.(type) {
 			case Messages:
-				msgs = append(msgs, m.Messages...)
+				msgs = append(msgs, m...)
 			default:
 				msgs = append(msgs, m)
 			}
 		}
-		return Messages{Messages: msgs}
+		return msgs
 	default:
 		return message
 	}
