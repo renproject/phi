@@ -44,12 +44,17 @@ func (pinger *PerpetualPinger) Reduce(message phi.Message) phi.Message {
 }
 
 func (pinger *PerpetualPinger) pingAsync() {
+	responder, ok := pinger.ponger.Send(Ping{})
+	if !ok {
+		panic("failed to send ping")
+	}
 	go func() {
-		pong, ok := pinger.ponger.SendSync(Ping{})
-		if !ok {
-			panic("failed to send ping")
+		for m := range responder {
+			_, ok := pinger.task.Send(m)
+			if !ok {
+				panic("failed to receive pong")
+			}
 		}
-		pinger.task.Send(pong)
 	}()
 }
 
