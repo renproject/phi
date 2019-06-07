@@ -49,7 +49,6 @@ func main() {
 	}
 	router, results := NewRouter(ringTopology(numPlayers), playerMap)
 	routerTask := phi.NewTask(&router, int(numPlayers))
-	router.SetTask(routerTask)
 
 	// Start the tasks
 	done := context.Background()

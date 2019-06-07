@@ -57,7 +57,7 @@ type Task interface {
 // Reducer represents something that can receive a message and provide a
 // corresponding result.
 type Reducer interface {
-	Reduce(Message) Message
+	Reduce(Task, Message) Message
 }
 
 // task is a basic implementation for a `Task`.
@@ -121,10 +121,10 @@ func (task *task) reduce(message Message) Messages {
 	switch message := message.(type) {
 	case Messages:
 		for _, msg := range message {
-			messages = append(messages, task.reducer.Reduce(msg))
+			messages = append(messages, task.reducer.Reduce(task, msg))
 		}
 	default:
-		messages = append(messages, task.reducer.Reduce(message))
+		messages = append(messages, task.reducer.Reduce(task, message))
 	}
 	return flatten(messages).(Messages)
 }

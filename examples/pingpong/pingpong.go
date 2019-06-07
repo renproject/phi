@@ -10,47 +10,39 @@ import (
 // PerpetualPinger represents an object that sends pings, but in addition will
 // send another ping after each pong it receives.
 type PerpetualPinger struct {
-	ponger, task phi.Task
+	ponger phi.Task
 }
 
 // NewPerpetualPinger returns a new `PerpetualPinger`.
-func NewPerpetualPinger() PerpetualPinger {
-	return PerpetualPinger{nil, nil}
-}
-
-// CompleteSetup givens the `PerpetualPinger` references to a `Ponger` task as
-// well as its own parent task. If this method is not called, the
-// `PerpetualPinger` will not function correctly.
-func (pinger *PerpetualPinger) CompleteSetup(ponger, task phi.Task) {
-	pinger.ponger = ponger
-	pinger.task = task
+func NewPerpetualPinger(ponger phi.Task) PerpetualPinger {
+	return PerpetualPinger{ponger}
 }
 
 // Reduce implements the `phi.Reducer` interface.
-func (pinger *PerpetualPinger) Reduce(message phi.Message) phi.Message {
+func (pinger *PerpetualPinger) Reduce(self phi.Task, message phi.Message) phi.Message {
 	switch message.(type) {
 	case Begin:
 		fmt.Println("Pinger beginning...")
-		pinger.pingAsync()
+		pinger.pingAsync(self)
 		return nil
 	case Pong:
 		fmt.Println("Received Pong!")
 		time.Sleep(500 * time.Millisecond)
-		pinger.pingAsync()
+		pinger.pingAsync(self)
 		return nil
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
 }
 
-func (pinger *PerpetualPinger) pingAsync() {
+func (pinger *PerpetualPinger) pingAsync(self phi.Task) {
 	responder, ok := pinger.ponger.Send(Ping{})
 	if !ok {
 		panic("failed to send ping")
 	}
 	go func() {
 		for m := range responder {
-			_, ok := pinger.task.Send(m)
+			_, ok := self.Send(m)
 			if !ok {
 				panic("failed to receive pong")
 			}
@@ -67,7 +59,7 @@ func NewPonger() Ponger {
 }
 
 // Reduce implements the `phi.Reducer` interface.
-func (ponger *Ponger) Reduce(message phi.Message) phi.Message {
+func (ponger *Ponger) Reduce(_ phi.Task, message phi.Message) phi.Message {
 	switch message.(type) {
 	case Ping:
 		fmt.Println("Received Ping!")
