@@ -55,7 +55,8 @@ type Task interface {
 }
 
 // Reducer represents something that can receive a message and provide a
-// corresponding result.
+// corresponding result. The `Task` argument is the parent task of the reducer,
+// and can be used as a handle to send messages to a reducer's own task.
 type Reducer interface {
 	Reduce(Task, Message) Message
 }
