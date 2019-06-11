@@ -41,10 +41,4 @@ var (
 
 	// ForAll is a function re-exported from package `co`.
 	ForAll = co.ForAll
-
-	// Forward is a function re-exported from package `co`.
-	Forward = co.Forward
-
-	// Merge is a function re-exported from package `co`.
-	Merge = co.Merge
 )
