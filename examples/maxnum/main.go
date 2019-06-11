@@ -39,7 +39,7 @@ func main() {
 		}
 
 		players[i] = NewPlayer(i, num, numPlayers)
-		playerTasks[i] = phi.NewTask(&players[i], 2*int(numPlayers))
+		playerTasks[i] = phi.New(&players[i], 2*int(numPlayers))
 	}
 
 	// Make router
@@ -48,7 +48,7 @@ func main() {
 		playerMap[player.ID()] = playerTasks[i]
 	}
 	router, results := NewRouter(ringTopology(numPlayers), playerMap)
-	routerTask := phi.NewTask(&router, int(numPlayers))
+	routerTask := phi.New(&router, int(numPlayers))
 
 	// Start the tasks
 	done := context.Background()

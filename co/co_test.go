@@ -7,7 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "github.com/republicprotocol/co-go"
+	. "github.com/renproject/phi"
 )
 
 var _ = Describe("Concurrency", func() {

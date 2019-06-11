@@ -11,9 +11,9 @@ import (
 func main() {
 	// Create the pinger and ponger tasks
 	ponger := NewPonger()
-	pongerTask := phi.NewTask(&ponger, 1)
+	pongerTask := phi.New(&ponger, 1)
 	pinger := NewPerpetualPinger(pongerTask)
-	pingerTask := phi.NewTask(&pinger, 1)
+	pingerTask := phi.New(&pinger, 1)
 
 	// Run the tasks
 	done := context.Background()
