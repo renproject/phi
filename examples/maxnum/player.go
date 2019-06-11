@@ -27,7 +27,7 @@ func (player *Player) ID() uint {
 }
 
 // Reduce implements the `phi.Reducer` interface.
-func (player *Player) Reduce(message phi.Message) phi.Message {
+func (player *Player) Reduce(_ phi.Task, message phi.Message) phi.Message {
 	switch message := message.(type) {
 	case Begin:
 		return PlayerNum{from: player.id, player: player.id, num: player.num}

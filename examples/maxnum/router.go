@@ -16,7 +16,6 @@ type Result struct {
 
 // A Router is responsible for routing messages between the players.
 type Router struct {
-	task                phi.Task
 	players             map[uint]phi.Task
 	routeTable          map[uint][]uint
 	result, resultsSeen uint
@@ -45,15 +44,8 @@ func NewRouter(routeTable map[uint][]uint, players map[uint]phi.Task) (Router, c
 	}, resultWriter
 }
 
-// SetTask sets the reference to the `phi.Task` which has the given `Router` as
-// a `phi.Reducer`. It is necessary for this method to be called for the task
-// to work correctly.
-func (router *Router) SetTask(task phi.Task) {
-	router.task = task
-}
-
 // Reduce implements the `phi.Reducer` interface.
-func (router *Router) Reduce(message phi.Message) phi.Message {
+func (router *Router) Reduce(self phi.Task, message phi.Message) phi.Message {
 	// A nil message means that nothing needs to be routed
 	if message == nil || router.terminated {
 		return nil
@@ -62,11 +54,11 @@ func (router *Router) Reduce(message phi.Message) phi.Message {
 	switch message := message.(type) {
 	case Begin:
 		for _, player := range router.players {
-			router.sendAsync(player, message)
+			router.sendAsync(self, player, message)
 		}
 	case PlayerNum:
 		for _, to := range router.routeTable[message.from] {
-			router.sendAsync(router.players[to], message)
+			router.sendAsync(self, router.players[to], message)
 		}
 	case Done:
 		router.resultsSeen++
@@ -88,7 +80,7 @@ func (router *Router) Reduce(message phi.Message) phi.Message {
 	return nil
 }
 
-func (router *Router) sendAsync(player phi.Task, message phi.Message) {
+func (router *Router) sendAsync(self phi.Task, player phi.Task, message phi.Message) {
 	go func() {
 		responder, ok := player.Send(message)
 		// Ensure that the message is sent
@@ -98,11 +90,11 @@ func (router *Router) sendAsync(player phi.Task, message phi.Message) {
 		}
 		messages := <-responder
 		for _, m := range messages {
-			_, ok = router.task.Send(m)
+			_, ok = self.Send(m)
 			// Ensure that the responses get received
 			for !ok {
 				time.Sleep(10 * time.Millisecond)
-				_, ok = router.task.Send(m)
+				_, ok = self.Send(m)
 			}
 		}
 	}()
