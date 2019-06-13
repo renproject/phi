@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"sync"
 
 	"github.com/renproject/phi/co"
 )
@@ -61,6 +62,10 @@ type Task interface {
 // and can be used as a handle to send messages to a reducer's own task.
 type Reducer interface {
 	Reduce(Task, Message) Message
+}
+
+type Resolver interface {
+	Resolve(Message) Sender
 }
 
 // Options are passed when constructing a `Task`. The `Cap` is the buffer
@@ -178,4 +183,25 @@ func flatten(message Message) Message {
 	default:
 		return message
 	}
+}
+
+type router struct {
+	resolverMu *sync.Mutex
+	resolver   Resolver
+}
+
+func NewResolver(resolver Resolver) Sender {
+	return &router{
+		resolverMu: new(sync.Mutex),
+		resolver:   resolver,
+	}
+}
+
+func (r *router) Send(message Message) (<-chan Messages, bool) {
+	sender := func() Sender {
+		r.resolverMu.Lock()
+		defer r.resolverMu.Unlock()
+		return r.resolver.Resolve(message)
+	}()
+	return sender.Send(message)
 }

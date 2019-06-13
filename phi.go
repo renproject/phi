@@ -32,6 +32,9 @@ type (
 var (
 	// New is a function re-exported from package `task`.
 	New = task.New
+
+	// NewResolver is a function re-exported from package `task`.
+	NewResolver = task.NewResolver
 )
 
 // Package `co` re-exports
