@@ -35,6 +35,8 @@ func (pinger *PerpetualPinger) Reduce(self phi.Task, message phi.Message) phi.Me
 	}
 }
 
+// pingAsync sends a message to the ponger and asynchronously wais for the
+// response. It does not retry so the message may not get sent.
 func (pinger *PerpetualPinger) pingAsync(self phi.Task) {
 	responder, ok := pinger.ponger.Send(Ping{})
 	if !ok {

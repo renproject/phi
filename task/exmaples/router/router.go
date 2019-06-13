@@ -6,10 +6,12 @@ import (
 	"github.com/renproject/phi"
 )
 
+// Router is a simple resolver that will route to three possible destinations.
 type Router struct {
 	destA, destB, destC phi.Sender
 }
 
+// NewRouter creates a new router with the given three destination `Sender`s.
 func NewRouter(a, b, c phi.Sender) Router {
 	return Router{
 		destA: a,
@@ -18,6 +20,7 @@ func NewRouter(a, b, c phi.Sender) Router {
 	}
 }
 
+// Resolver implements the `phi.Resolver` interface
 func (router *Router) Resolve(message phi.Message) phi.Sender {
 	switch message.(type) {
 	case MessageA:

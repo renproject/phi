@@ -64,6 +64,8 @@ type Reducer interface {
 	Reduce(Task, Message) Message
 }
 
+// Resolver represents something that can resolve or route messages to certain
+// senders.
 type Resolver interface {
 	Resolve(Message) Sender
 }
@@ -185,11 +187,16 @@ func flatten(message Message) Message {
 	}
 }
 
+// router is an implementation of a `Sender` that is a resolver.
 type router struct {
 	resolverMu *sync.Mutex
 	resolver   Resolver
 }
 
+// NewResolver returns a new sender that represents a resolver. The given
+// resolver determines how the sender routes messages; any message `m` that is
+// sent to this sender will be sent to the sender determined by the resolver
+// through `Resolve(m)`.
 func NewResolver(resolver Resolver) Sender {
 	return &router{
 		resolverMu: new(sync.Mutex),
@@ -197,6 +204,7 @@ func NewResolver(resolver Resolver) Sender {
 	}
 }
 
+// Send implements the `Sender` interface.
 func (r *router) Send(message Message) (<-chan Messages, bool) {
 	sender := func() Sender {
 		r.resolverMu.Lock()
