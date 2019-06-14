@@ -27,6 +27,7 @@ func main() {
 	max := uint(1000)
 
 	// Make players
+	playerOpts := phi.Options{Cap: 2 * int(numPlayers)}
 	playerMax := uint(0)
 	players := make([]Player, numPlayers)
 	playerTasks := make([]phi.Task, numPlayers)
@@ -39,23 +40,24 @@ func main() {
 		}
 
 		players[i] = NewPlayer(i, num, numPlayers)
-		playerTasks[i] = phi.New(&players[i], 2*int(numPlayers))
+		playerTasks[i] = phi.New(&players[i], playerOpts)
 	}
 
 	// Make router
+	routerOpts := phi.Options{Cap: int(numPlayers)}
 	playerMap := map[uint]phi.Task{}
 	for i, player := range players {
 		playerMap[player.ID()] = playerTasks[i]
 	}
 	router, results := NewRouter(ringTopology(numPlayers), playerMap)
-	routerTask := phi.New(&router, int(numPlayers))
+	routerTask := phi.New(&router, routerOpts)
 
 	// Start the tasks
-	done := context.Background()
+	ctx := context.Background()
 	for _, player := range playerTasks {
-		go player.Run(done)
+		go player.Run(ctx)
 	}
-	go routerTask.Run(done)
+	go routerTask.Run(ctx)
 
 	// Send the initial message
 	routerTask.Send(Begin{})

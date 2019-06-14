@@ -22,6 +22,9 @@ type (
 	// Task is an interface re-exported from package `task`.
 	Task = task.Task
 
+	// Options is a struct re-exported from package `task`.
+	Options = task.Options
+
 	// Reducer is an interface re-exported from package `task`.
 	Reducer = task.Reducer
 )
@@ -29,6 +32,9 @@ type (
 var (
 	// New is a function re-exported from package `task`.
 	New = task.New
+
+	// NewRouter is a function re-exported from package `task`.
+	NewRouter = task.NewRouter
 )
 
 // Package `co` re-exports

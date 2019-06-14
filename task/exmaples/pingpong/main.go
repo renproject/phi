@@ -10,15 +10,16 @@ import (
 
 func main() {
 	// Create the pinger and ponger tasks
+	opts := phi.Options{Cap: 1}
 	ponger := NewPonger()
-	pongerTask := phi.New(&ponger, 1)
+	pongerTask := phi.New(&ponger, opts)
 	pinger := NewPerpetualPinger(pongerTask)
-	pingerTask := phi.New(&pinger, 1)
+	pingerTask := phi.New(&pinger, opts)
 
 	// Run the tasks
-	done := context.Background()
-	go pingerTask.Run(done)
-	go pongerTask.Run(done)
+	ctx := context.Background()
+	go pingerTask.Run(ctx)
+	go pongerTask.Run(ctx)
 
 	// Start the communication and run for some time
 	pingerTask.Send(Begin{})

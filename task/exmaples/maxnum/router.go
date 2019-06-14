@@ -80,6 +80,8 @@ func (router *Router) Reduce(self phi.Task, message phi.Message) phi.Message {
 	return nil
 }
 
+// sendAsync sends a message and asynchronously waits for the response. It will
+// ensure that the message is sent.
 func (router *Router) sendAsync(self phi.Task, player phi.Task, message phi.Message) {
 	go func() {
 		responder, ok := player.Send(message)

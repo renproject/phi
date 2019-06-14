@@ -2,6 +2,9 @@ package task
 
 import (
 	"context"
+	"sync"
+
+	"github.com/renproject/phi/co"
 )
 
 // Message represents a message that is sent between tasks for communication.
@@ -61,6 +64,24 @@ type Reducer interface {
 	Reduce(Task, Message) Message
 }
 
+// Resolver represents something that can resolve or route messages to certain
+// senders.
+type Resolver interface {
+	Resolve(Message) Sender
+}
+
+// Options are passed when constructing a `Task`. The `Cap` is the buffer
+// capacity of the `Task`'s channel, and the `Scale` is the number of worker
+// instances of the reducer for load balancing. If `Scale` is an number less
+// than 2, there will only be one instance of the reducer. It is important to
+// note that additional copies of the reducer will not be created for `Scale`
+// >= 2; this means that reducers that have and modify their own state are not
+// safe to be used at non-unity scales. Only reducers that are purely
+// functional should be used with non-unity scale.
+type Options struct {
+	Cap, Scale int
+}
+
 // task is a basic implementation for a `Task`.
 type task struct {
 	// The reducer for message handling logic.
@@ -68,16 +89,20 @@ type task struct {
 
 	// The buffered channel that incoming messages are written to.
 	input chan messageWithResponder
+
+	// The scale (number of workers) for the task.
+	scale int
 }
 
 // New returns a new task with the given reducer and buffer capacity. The
 // buffer capacity is the number of messages that can be buffered for
 // processing before the task can no longer accept more messages (until space
 // in the buffer is freed up by processing messages in the buffer).
-func New(reducer Reducer, cap int) Task {
+func New(reducer Reducer, opts Options) Task {
 	return &task{
 		reducer: reducer,
-		input:   make(chan messageWithResponder, cap),
+		input:   make(chan messageWithResponder, opts.Cap),
+		scale:   opts.Scale,
 	}
 }
 
@@ -85,14 +110,23 @@ func New(reducer Reducer, cap int) Task {
 // interface). This function blocks. The task will continue to run until it is
 // signalled to terminate by the context.
 func (task *task) Run(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case message := <-task.input:
-			message.responder <- task.reduce(flatten(message.message))
-			close(message.responder)
+	loop := func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case message := <-task.input:
+				message.responder <- task.reduce(flatten(message.message))
+				close(message.responder)
+			}
 		}
+	}
+
+	// Don't spawn a go routine if there is no load balancing
+	if task.scale < 2 {
+		loop()
+	} else {
+		co.ParForAll(task.scale, func(i int) { loop() })
 	}
 }
 
@@ -152,4 +186,31 @@ func flatten(message Message) Message {
 	default:
 		return message
 	}
+}
+
+// router is an implementation of a `Sender` that is a resolver.
+type router struct {
+	resolverMu *sync.Mutex
+	resolver   Resolver
+}
+
+// NewResolver returns a new sender that represents a resolver. The given
+// resolver determines how the sender routes messages; any message `m` that is
+// sent to this sender will be sent to the sender determined by the resolver
+// through `Resolve(m)`.
+func NewRouter(resolver Resolver) Sender {
+	return &router{
+		resolverMu: new(sync.Mutex),
+		resolver:   resolver,
+	}
+}
+
+// Send implements the `Sender` interface.
+func (r *router) Send(message Message) (<-chan Messages, bool) {
+	sender := func() Sender {
+		r.resolverMu.Lock()
+		defer r.resolverMu.Unlock()
+		return r.resolver.Resolve(message)
+	}()
+	return sender.Send(message)
 }
