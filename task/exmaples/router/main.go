@@ -26,7 +26,7 @@ func main() {
 
 	// Construct the resolver
 	router := NewRouter(aTask, bTask, cTask)
-	resolver := phi.NewResolver(&router)
+	resolver := phi.NewRouter(&router)
 
 	// Construct the user. Use an increased channel capacity to avoid dropped
 	// messages.
@@ -36,11 +36,11 @@ func main() {
 
 	// Start the tasks. Notice that a resolver is just a `phi.Sender`, and
 	// hence does not need to be (and indeed cannot be) run.
-	done := context.Background()
-	go aTask.Run(done)
-	go bTask.Run(done)
-	go cTask.Run(done)
-	go userTask.Run(done)
+	ctx := context.Background()
+	go aTask.Run(ctx)
+	go bTask.Run(ctx)
+	go cTask.Run(ctx)
+	go userTask.Run(ctx)
 
 	// Send a message that should be routed to each of the three destinations.
 	var ok bool

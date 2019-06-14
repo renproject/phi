@@ -90,6 +90,7 @@ type task struct {
 	// The buffered channel that incoming messages are written to.
 	input chan messageWithResponder
 
+	// The scale (number of workers) for the task.
 	scale int
 }
 
@@ -197,7 +198,7 @@ type router struct {
 // resolver determines how the sender routes messages; any message `m` that is
 // sent to this sender will be sent to the sender determined by the resolver
 // through `Resolve(m)`.
-func NewResolver(resolver Resolver) Sender {
+func NewRouter(resolver Resolver) Sender {
 	return &router{
 		resolverMu: new(sync.Mutex),
 		resolver:   resolver,

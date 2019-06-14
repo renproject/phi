@@ -27,13 +27,13 @@ func main() {
 	lb := LB{}
 	lbTask := phi.New(lb, lbOpts)
 	userOpts := phi.Options{Cap: n}
-	user, finished := NewUser(lbTask, n)
+	user, done := NewUser(lbTask, n)
 	userTask := phi.New(&user, userOpts)
 
 	// Run the tasks
-	done := context.Background()
-	go lbTask.Run(done)
-	go userTask.Run(done)
+	ctx := context.Background()
+	go lbTask.Run(ctx)
+	go userTask.Run(ctx)
 
 	// Send requests to the user
 	start := time.Now()
@@ -45,7 +45,7 @@ func main() {
 	}
 
 	// Wait until the user has finished
-	<-finished
+	<-done
 	elapsed := time.Since(start)
 	fmt.Printf("processed %v requests in %v\n", n, elapsed)
 }

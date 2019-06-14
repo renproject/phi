@@ -17,9 +17,9 @@ func main() {
 	pingerTask := phi.New(&pinger, opts)
 
 	// Run the tasks
-	done := context.Background()
-	go pingerTask.Run(done)
-	go pongerTask.Run(done)
+	ctx := context.Background()
+	go pingerTask.Run(ctx)
+	go pongerTask.Run(ctx)
 
 	// Start the communication and run for some time
 	pingerTask.Send(Begin{})

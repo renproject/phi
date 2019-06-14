@@ -53,11 +53,11 @@ func main() {
 	routerTask := phi.New(&router, routerOpts)
 
 	// Start the tasks
-	done := context.Background()
+	ctx := context.Background()
 	for _, player := range playerTasks {
-		go player.Run(done)
+		go player.Run(ctx)
 	}
-	go routerTask.Run(done)
+	go routerTask.Run(ctx)
 
 	// Send the initial message
 	routerTask.Send(Begin{})
