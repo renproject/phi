@@ -9,7 +9,9 @@ import (
 
 // User represents a basic task that sends messages to a resolver and waits for
 // the response from the associated destination task that the message was
-// intended for.
+// intended for. The task is considered to have completed successfully if it
+// receives three unique responses after receiving one each of MessageA,
+// MessageB and MessageC.
 type User struct {
 	resolver      phi.Sender
 	responsesSeen map[string]struct{}
@@ -40,12 +42,14 @@ func (user *User) Reduce(self phi.Task, message phi.Message) phi.Message {
 	case Response:
 		fmt.Printf("received response from %v\n", message.msg)
 		if _, ok := user.responsesSeen[message.msg]; ok {
+			// If we have already seen a message, this is a failure
 			user.success <- false
 			user.terminated = true
 			return nil
 		} else {
 			user.responsesSeen[message.msg] = struct{}{}
 			if len(user.responsesSeen) == 3 {
+				// Receiving three unique messages is a success
 				user.success <- true
 				user.terminated = true
 				return nil
