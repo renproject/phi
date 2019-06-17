@@ -47,9 +47,12 @@ func main() {
 
 	// Wait until the user has finished
 	<-done
+
+	// Execution should take just over 1 second
 	elapsed := time.Since(start)
 	if elapsed > 2*time.Second {
 		os.Exit(1)
 	}
+
 	fmt.Printf("processed %v requests in %v\n", n, elapsed)
 }

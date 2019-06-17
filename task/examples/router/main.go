@@ -9,6 +9,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/renproject/phi"
@@ -31,7 +32,7 @@ func main() {
 	// Construct the user. Use an increased channel capacity to avoid dropped
 	// messages.
 	opts.Cap = 3
-	user := NewUser(resolver)
+	user, success := NewUser(resolver)
 	userTask := phi.New(&user, opts)
 
 	// Start the tasks. Notice that a resolver is just a `phi.Sender`, and
@@ -58,5 +59,13 @@ func main() {
 	}
 
 	// Wait a moment for the responses to get back to the user.
-	time.Sleep(10 * time.Millisecond)
+	select {
+	case result := <-success:
+		if !result {
+			os.Exit(1)
+		}
+		return
+	case <-time.After(time.Second):
+		os.Exit(1)
+	}
 }

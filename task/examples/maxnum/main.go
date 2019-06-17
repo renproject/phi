@@ -13,6 +13,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/renproject/phi"
@@ -68,6 +69,7 @@ func main() {
 		fmt.Printf("Success: %v players reached consensus on a maximum value of %v\n", result.Players, result.Max)
 	} else {
 		fmt.Println("Failed!")
+		os.Exit(1)
 	}
 }
 
