@@ -13,7 +13,7 @@ jobs:
       - restore_cache: # Restore saved cache if no changes are detected since last run
           key: go-mod-v1-{{ checksum "go.sum" }}
       - run: go test -v ./...
-      - run: ./scripts/run_examples.sh
+      - run: ./scripts/run_examples.sh # Run all of the task examples
       - save_cache:
           key: go-mod-v1-{{ checksum "go.sum" }}
           paths:
