@@ -3,6 +3,8 @@ package main
 
 import (
 	"context"
+	"os"
+	"time"
 
 	"github.com/renproject/phi"
 )
@@ -24,5 +26,10 @@ func main() {
 	pingerTask.Send(Begin{})
 
 	// Wait for the task to finish
-	<-done
+	select {
+	case <-time.After(time.Second):
+		os.Exit(1)
+	case <-done:
+		os.Exit(0)
+	}
 }
