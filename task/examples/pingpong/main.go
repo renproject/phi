@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"os"
 	"time"
 
 	"github.com/renproject/phi"
@@ -13,7 +14,7 @@ func main() {
 	opts := phi.Options{Cap: 1}
 	ponger := NewPonger()
 	pongerTask := phi.New(&ponger, opts)
-	pinger := NewPerpetualPinger(pongerTask)
+	pinger, done := NewPerpetualPinger(pongerTask, 10)
 	pingerTask := phi.New(&pinger, opts)
 
 	// Run the tasks
@@ -23,5 +24,12 @@ func main() {
 
 	// Start the communication and run for some time
 	pingerTask.Send(Begin{})
-	time.Sleep(10 * time.Second)
+
+	// Wait for the task to finish
+	select {
+	case <-time.After(time.Second):
+		os.Exit(1)
+	case <-done:
+		os.Exit(0)
+	}
 }

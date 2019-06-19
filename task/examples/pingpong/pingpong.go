@@ -7,27 +7,40 @@ import (
 	"github.com/renproject/phi"
 )
 
+var WAIT_MILLIS time.Duration = time.Duration(10)
+
 // PerpetualPinger represents an object that sends pings, but in addition will
 // send another ping after each pong it receives.
 type PerpetualPinger struct {
-	ponger phi.Task
+	ponger                       phi.Task
+	pingsReceived, pingsRequired int
+	done                         chan struct{}
 }
 
 // NewPerpetualPinger returns a new `PerpetualPinger`.
-func NewPerpetualPinger(ponger phi.Task) PerpetualPinger {
-	return PerpetualPinger{ponger}
+func NewPerpetualPinger(ponger phi.Task, pingsRequired int) (PerpetualPinger, chan struct{}) {
+	done := make(chan struct{}, 1)
+	return PerpetualPinger{
+		ponger:        ponger,
+		pingsReceived: 0,
+		pingsRequired: pingsRequired,
+		done:          done,
+	}, done
 }
 
 // Reduce implements the `phi.Reducer` interface.
 func (pinger *PerpetualPinger) Reduce(self phi.Task, message phi.Message) phi.Message {
 	switch message.(type) {
 	case Begin:
-		fmt.Println("Pinger beginning...")
 		pinger.pingAsync(self)
 		return nil
 	case Pong:
 		fmt.Println("Received Pong!")
-		time.Sleep(500 * time.Millisecond)
+		pinger.pingsReceived++
+		if pinger.pingsReceived == pinger.pingsRequired {
+			close(pinger.done)
+		}
+		time.Sleep(WAIT_MILLIS * time.Millisecond)
 		pinger.pingAsync(self)
 		return nil
 	default:
@@ -65,7 +78,7 @@ func (ponger *Ponger) Reduce(_ phi.Task, message phi.Message) phi.Message {
 	switch message.(type) {
 	case Ping:
 		fmt.Println("Received Ping!")
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(WAIT_MILLIS * time.Millisecond)
 		return Pong{}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))

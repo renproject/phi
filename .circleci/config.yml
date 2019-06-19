@@ -1,0 +1,28 @@
+version: 2.1
+orbs:
+  core: ren/circleci-orbs@dev:first
+executors:
+  go_exec:
+    docker:
+      - image: circleci/golang:1.12
+jobs:
+  build:
+    executor: go_exec
+    steps:
+      - checkout
+      - restore_cache: # Restore saved cache if no changes are detected since last run
+          key: go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: Run tests
+          command: go test -v ./...
+      - run:
+          name: Run task examples
+          command: ./scripts/run_examples.sh
+      - save_cache:
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+workflows:
+  build:
+    jobs:
+        - build
