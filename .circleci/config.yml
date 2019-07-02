@@ -1,6 +1,4 @@
 version: 2.1
-orbs:
-  core: ren/circleci-orbs@dev:first
 executors:
   go_exec:
     docker:
