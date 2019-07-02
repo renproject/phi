@@ -65,7 +65,8 @@ type Reducer interface {
 }
 
 // Resolver represents something that can resolve or route messages to certain
-// senders.
+// senders. Returning a nil sender from `Resolve` signifies that the message is
+// not to be sent anywhere.
 type Resolver interface {
 	Resolve(Message) Sender
 }
@@ -194,7 +195,7 @@ type router struct {
 	resolver   Resolver
 }
 
-// NewResolver returns a new sender that represents a resolver. The given
+// NewRouter returns a new sender that represents a resolver. The given
 // resolver determines how the sender routes messages; any message `m` that is
 // sent to this sender will be sent to the sender determined by the resolver
 // through `Resolve(m)`.
@@ -205,12 +206,16 @@ func NewRouter(resolver Resolver) Sender {
 	}
 }
 
-// Send implements the `Sender` interface.
+// Send implements the `Sender` interface. If the resolver returns a nil Sender,
+// it signifies that the message is not to be sent anywhere.
 func (r *router) Send(message Message) (<-chan Messages, bool) {
 	sender := func() Sender {
 		r.resolverMu.Lock()
 		defer r.resolverMu.Unlock()
 		return r.resolver.Resolve(message)
 	}()
-	return sender.Send(message)
+	if sender != nil {
+		return sender.Send(message)
+	}
+	return nil, true
 }
