@@ -20,8 +20,8 @@ func NewRouter(a, b, c phi.Sender) Router {
 	}
 }
 
-// Resolver implements the `phi.Resolver` interface
-func (router *Router) Resolve(message phi.Message) phi.Sender {
+// Route implements the `phi.Router` interface
+func (router *Router) Route(message phi.Message) phi.Sender {
 	switch message.(type) {
 	case MessageA:
 		return router.destA

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-EXAMPLES_PATH=./task/examples
+EXAMPLES_PATH=./examples
 
 for dir in $EXAMPLES_PATH/*/
 do

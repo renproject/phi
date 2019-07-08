@@ -15,7 +15,7 @@ jobs:
           command: go test -v ./...
       - run:
           name: Run task examples
-          command: ./scripts/run_examples.sh
+          command: ./examples/run_examples.sh
       - save_cache:
           key: go-mod-v1-{{ checksum "go.sum" }}
           paths:

@@ -27,6 +27,9 @@ type (
 
 	// Reducer is an interface re-exported from package `task`.
 	Reducer = task.Reducer
+
+	// Router is an interface re-exported from package `task`.
+	Router = task.Router
 )
 
 var (

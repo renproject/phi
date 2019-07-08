@@ -64,11 +64,11 @@ type Reducer interface {
 	Reduce(Task, Message) Message
 }
 
-// Resolver represents something that can resolve or route messages to certain
-// senders. Returning a nil sender from `Resolve` signifies that the message is
+// Router represents something that can route different messages to different
+// senders. Returning a nil sender from `Route` signifies that the message is
 // not to be sent anywhere.
-type Resolver interface {
-	Resolve(Message) Sender
+type Router interface {
+	Route(Message) Sender
 }
 
 // Options are passed when constructing a `Task`. The `Cap` is the buffer
@@ -191,18 +191,18 @@ func flatten(message Message) Message {
 
 // router is an implementation of a `Sender` that is a resolver.
 type router struct {
-	resolverMu *sync.Mutex
-	resolver   Resolver
+	rMu *sync.Mutex
+	r   Router
 }
 
-// NewRouter returns a new sender that represents a resolver. The given
-// resolver determines how the sender routes messages; any message `m` that is
-// sent to this sender will be sent to the sender determined by the resolver
-// through `Resolve(m)`.
-func NewRouter(resolver Resolver) Sender {
+// NewRouter returns a new sender that represents a Router. The given Router
+// determines how the sender routes messages; any message `m` that is sent to
+// this sender will be sent to the sender determined by the Router through
+// `Route(m)`.
+func NewRouter(r Router) Sender {
 	return &router{
-		resolverMu: new(sync.Mutex),
-		resolver:   resolver,
+		rMu: new(sync.Mutex),
+		r:   r,
 	}
 }
 
@@ -210,9 +210,9 @@ func NewRouter(resolver Resolver) Sender {
 // it signifies that the message is not to be sent anywhere.
 func (r *router) Send(message Message) (<-chan Messages, bool) {
 	sender := func() Sender {
-		r.resolverMu.Lock()
-		defer r.resolverMu.Unlock()
-		return r.resolver.Resolve(message)
+		r.rMu.Lock()
+		defer r.rMu.Unlock()
+		return r.r.Route(message)
 	}()
 	if sender != nil {
 		return sender.Send(message)
