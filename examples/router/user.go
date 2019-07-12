@@ -30,57 +30,55 @@ func NewUser(resolver phi.Sender) (User, <-chan bool) {
 	}, success
 }
 
-// Handle implements the `phi.Handler` interface.
-func (user *User) Handle(self phi.Task, message phi.Message) {
+// Reduce implements the `phi.Reducer` interface.
+func (user *User) Reduce(self phi.Task, message phi.Message) phi.Message {
 	if user.terminated {
-		return
+		return nil
 	}
 
 	switch message := message.(type) {
-	case MessageA:
-		user.sendAsync(self, message, message.Responder)
-	case MessageB:
-		user.sendAsync(self, message, message.Responder)
-	case MessageC:
-		user.sendAsync(self, message, message.Responder)
+	case MessageA, MessageB, MessageC:
+		user.sendAsync(self, message)
 	case Response:
 		fmt.Printf("received response from %v\n", message.msg)
 		if _, ok := user.responsesSeen[message.msg]; ok {
 			// If we have already seen a message, this is a failure
 			user.success <- false
 			user.terminated = true
-			return
+			return nil
 		} else {
 			user.responsesSeen[message.msg] = struct{}{}
 			if len(user.responsesSeen) == 3 {
 				// Receiving three unique messages is a success
 				user.success <- true
 				user.terminated = true
-				return
+				return nil
 			}
 		}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
-	return
+	return nil
 }
 
 // sendAsync sends a message and asynchronously waits for the response. It will
 // ensure that the message is sent.
-func (user *User) sendAsync(self phi.Task, message phi.Message, responder chan phi.Message) {
+func (user *User) sendAsync(self phi.Task, message phi.Message) {
 	go func() {
-		ok := user.resolver.Send(message)
+		responder, ok := user.resolver.Send(message)
 		// Ensure that the message is sent
 		for !ok {
 			time.Sleep(10 * time.Millisecond)
-			ok = user.resolver.Send(message)
+			responder, ok = user.resolver.Send(message)
 		}
-		m := <-responder
-		ok = self.Send(m)
-		// Ensure that the responses get received
-		for !ok {
-			time.Sleep(10 * time.Millisecond)
-			ok = self.Send(m)
+		messages := <-responder
+		for _, m := range messages {
+			_, ok = self.Send(m)
+			// Ensure that the responses get received
+			for !ok {
+				time.Sleep(10 * time.Millisecond)
+				_, ok = self.Send(m)
+			}
 		}
 	}()
 }

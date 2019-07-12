@@ -28,11 +28,12 @@ func NewPerpetualPinger(ponger phi.Task, pingsRequired int) (PerpetualPinger, ch
 	}, done
 }
 
-// Handle implements the `phi.Handler` interface.
-func (pinger *PerpetualPinger) Handle(self phi.Task, message phi.Message) {
+// Reduce implements the `phi.Reducer` interface.
+func (pinger *PerpetualPinger) Reduce(self phi.Task, message phi.Message) phi.Message {
 	switch message.(type) {
 	case Begin:
 		pinger.pingAsync(self)
+		return nil
 	case Pong:
 		fmt.Println("Received Pong!")
 		pinger.pingsReceived++
@@ -41,6 +42,7 @@ func (pinger *PerpetualPinger) Handle(self phi.Task, message phi.Message) {
 		}
 		time.Sleep(WAIT_MILLIS * time.Millisecond)
 		pinger.pingAsync(self)
+		return nil
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
@@ -49,14 +51,13 @@ func (pinger *PerpetualPinger) Handle(self phi.Task, message phi.Message) {
 // pingAsync sends a message to the ponger and asynchronously wais for the
 // response. It does not retry so the message may not get sent.
 func (pinger *PerpetualPinger) pingAsync(self phi.Task) {
-	responder := make(chan phi.Message, 1)
-	ok := pinger.ponger.Send(Ping{Responder: responder})
+	responder, ok := pinger.ponger.Send(Ping{})
 	if !ok {
 		panic("failed to send ping")
 	}
 	go func() {
 		for m := range responder {
-			ok := self.Send(m)
+			_, ok := self.Send(m)
 			if !ok {
 				panic("failed to receive pong")
 			}
@@ -72,13 +73,13 @@ func NewPonger() Ponger {
 	return Ponger{}
 }
 
-// Handle implements the `phi.Handler` interface.
-func (ponger *Ponger) Handle(_ phi.Task, message phi.Message) {
-	switch message := message.(type) {
+// Reduce implements the `phi.Reducer` interface.
+func (ponger *Ponger) Reduce(_ phi.Task, message phi.Message) phi.Message {
+	switch message.(type) {
 	case Ping:
 		fmt.Println("Received Ping!")
 		time.Sleep(WAIT_MILLIS * time.Millisecond)
-		message.Responder <- Pong{}
+		return Pong{}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}

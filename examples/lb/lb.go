@@ -11,11 +11,9 @@ type LB struct {
 	id int
 }
 
-// Handle implements the `phi.Handlerr` interface. We simulate a slow task by
+// Reduce implements the `phi.Reducer` interface. We simulate a slow task by
 // simply sleeping for a time before returning.
-func (LB) Handle(_ phi.Task, m phi.Message) {
-	if m, ok := m.(Init); ok {
-		time.Sleep(time.Second)
-		m.Responder <- Done{}
-	}
+func (LB) Reduce(_ phi.Task, _ phi.Message) phi.Message {
+	time.Sleep(time.Second)
+	return Done{}
 }

@@ -39,7 +39,7 @@ func main() {
 	// Send requests to the user
 	start := time.Now()
 	for i := 0; i < n; i++ {
-		ok := userTask.Send(Init{Responder: make(chan phi.Message, 1)})
+		_, ok := userTask.Send(Init{})
 		if !ok {
 			panic("message should send correctly")
 		}

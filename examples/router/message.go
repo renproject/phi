@@ -1,27 +1,19 @@
 package main
 
-import "github.com/renproject/phi"
-
 // MessageA represents a message that has particular destination task.
-type MessageA struct {
-	Responder chan phi.Message
-}
+type MessageA struct{}
 
 // IsMessage implements the `phi.Message` interface.
 func (MessageA) IsMessage() {}
 
 // MessageB represents a message that has particular destination task.
-type MessageB struct {
-	Responder chan phi.Message
-}
+type MessageB struct{}
 
 // IsMessage implements the `phi.Message` interface.
 func (MessageB) IsMessage() {}
 
 // MessageC represents a message that has particular destination task.
-type MessageC struct {
-	Responder chan phi.Message
-}
+type MessageC struct{}
 
 // IsMessage implements the `phi.Message` interface.
 func (MessageC) IsMessage() {}

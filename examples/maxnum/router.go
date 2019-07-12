@@ -44,28 +44,21 @@ func NewRouter(routeTable map[uint][]uint, players map[uint]phi.Task) (Router, c
 	}, resultWriter
 }
 
-// Handle implements the `phi.Handler` interface.
-func (router *Router) Handle(self phi.Task, message phi.Message) {
+// Reduce implements the `phi.Reducer` interface.
+func (router *Router) Reduce(self phi.Task, message phi.Message) phi.Message {
 	// A nil message means that nothing needs to be routed
 	if message == nil || router.terminated {
-		return
+		return nil
 	}
 
 	switch message := message.(type) {
-	case BeginRouter:
+	case Begin:
 		for _, player := range router.players {
-			responder := make(chan phi.Message, 1)
-			router.sendAsync(self, player, Begin{Responder: responder}, responder)
+			router.sendAsync(self, player, message)
 		}
 	case PlayerNum:
 		for _, to := range router.routeTable[message.from] {
-			responder := make(chan phi.Message, 1)
-			router.sendAsync(self, router.players[to], PlayerNum{
-				from:      message.from,
-				player:    message.player,
-				num:       message.num,
-				Responder: responder,
-			}, responder)
+			router.sendAsync(self, router.players[to], message)
 		}
 	case Done:
 		router.resultsSeen++
@@ -83,34 +76,27 @@ func (router *Router) Handle(self phi.Task, message phi.Message) {
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
+
+	return nil
 }
 
 // sendAsync sends a message and asynchronously waits for the response. It will
 // ensure that the message is sent.
-func (router *Router) sendAsync(self phi.Task, player phi.Task, message phi.Message, responder chan phi.Message) {
+func (router *Router) sendAsync(self phi.Task, player phi.Task, message phi.Message) {
 	go func() {
-		ok := player.Send(message)
+		responder, ok := player.Send(message)
 		// Ensure that the message is sent
 		for !ok {
 			time.Sleep(10 * time.Millisecond)
-			ok = player.Send(message)
+			responder, ok = player.Send(message)
 		}
-		m := <-responder
-		if messages, ok := m.(phi.Messages); ok {
-			for _, m := range messages {
-				ok = self.Send(m)
-				// Ensure that the responses get received
-				for !ok {
-					time.Sleep(10 * time.Millisecond)
-					ok = self.Send(m)
-				}
-			}
-		} else {
-			ok = self.Send(m)
+		messages := <-responder
+		for _, m := range messages {
+			_, ok = self.Send(m)
 			// Ensure that the responses get received
 			for !ok {
 				time.Sleep(10 * time.Millisecond)
-				ok = self.Send(m)
+				_, ok = self.Send(m)
 			}
 		}
 	}()

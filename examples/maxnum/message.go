@@ -1,16 +1,7 @@
 package main
 
-import "github.com/renproject/phi"
-
-// BeginRouter is a signal for the router start the execution.
-type BeginRouter struct{}
-
-func (BeginRouter) IsMessage() {}
-
-// Begin is a signal for the router start the execution of player.
-type Begin struct {
-	Responder chan phi.Message
-}
+// Begin is a signal for the router start the execution.
+type Begin struct{}
 
 // IsMessage implements the `phi.Message` interface.
 func (Begin) IsMessage() {}
@@ -19,7 +10,6 @@ func (Begin) IsMessage() {}
 // what numbers each player has.
 type PlayerNum struct {
 	from, player, num uint
-	Responder         chan phi.Message
 }
 
 // IsMessage implements the `phi.Message` interface.

@@ -61,7 +61,7 @@ func main() {
 	go routerTask.Run(ctx)
 
 	// Send the initial message
-	routerTask.Send(BeginRouter{})
+	routerTask.Send(Begin{})
 
 	// Read and check the result
 	result := <-results
