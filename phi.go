@@ -25,8 +25,8 @@ type (
 	// Options is a struct re-exported from package `task`.
 	Options = task.Options
 
-	// Reducer is an interface re-exported from package `task`.
-	Reducer = task.Reducer
+	// Handler is an interface re-exported from package `task`.
+	Handler = task.Handler
 
 	// Router is an interface re-exported from package `task`.
 	Router = task.Router
