@@ -14,11 +14,21 @@ type Message interface {
 	IsMessage()
 }
 
-// Messages is a collection of messages. Note that handlers will never receive
+// messageWithResponder is a `Message` wrapper that also contains a channel
+// where a response can be written.
+type messageWithResponder struct {
+	// The message being sent.
+	message Message
+
+	// The responder channel where the task will write its response.
+	responder chan Messages
+}
+
+// Messages is a collection of messages. Note that reducers will never receive
 // a `Messages` type because they will always be flattened before being
 // processed. If a task needs to respond with more than one message, and it is
 // important that these messages are processed together, then a custom
-// container type should be created and handled appropriately in the handler.
+// container type should be created and handled appropriately in the reducer.
 type Messages []Message
 
 // IsMessage implements the Message interface.
@@ -33,25 +43,25 @@ type Runner interface {
 
 // Sender represents something that can be sent messages.
 type Sender interface {
-	// Send takes a message and returns a boolean that indicates if the send was
-	// successful.
-	Send(Message) bool
+	// Send takes a message and returns a channel where the response will be
+	// written and also a boolean that indicates if the send was successful.
+	Send(Message) (<-chan Messages, bool)
 }
 
 // Task is the intersection of the `Runner` and `Sender` interfaces. It
 // represents an entity that (when running) can be sent messages and upon
 // receipt of these messages performs internal logic (which often involves
-// sending messages to other tasks).
+// sending messages to other tasks) and can also return response messages.
 type Task interface {
 	Runner
 	Sender
 }
 
-// Handler defines a type that can receive a message and mutate its internal
-// state. The `Task` argument is the parent task of the Handler, and can be used
-// by a Handler to send messages to itself.
-type Handler interface {
-	Handle(Task, Message)
+// Reducer represents something that can receive a message and provide a
+// corresponding result. The `Task` argument is the parent task of the reducer,
+// and can be used as a handle to send messages to a reducer's own task.
+type Reducer interface {
+	Reduce(Task, Message) Message
 }
 
 // Router represents something that can route different messages to different
@@ -63,11 +73,11 @@ type Router interface {
 
 // Options are passed when constructing a `Task`. The `Cap` is the buffer
 // capacity of the `Task`'s channel, and the `Scale` is the number of worker
-// instances of the handler for load balancing. If `Scale` is an number less
-// than 2, there will only be one instance of the handler. It is important to
-// note that additional copies of the handler will not be created for `Scale`
-// >= 2; this means that handlers that have and modify their own state are not
-// safe to be used at non-unity scales. Only handlers that are purely
+// instances of the reducer for load balancing. If `Scale` is an number less
+// than 2, there will only be one instance of the reducer. It is important to
+// note that additional copies of the reducer will not be created for `Scale`
+// >= 2; this means that reducers that have and modify their own state are not
+// safe to be used at non-unity scales. Only reducers that are purely
 // functional should be used with non-unity scale.
 type Options struct {
 	Cap, Scale int
@@ -75,24 +85,24 @@ type Options struct {
 
 // task is a basic implementation for a `Task`.
 type task struct {
-	// The handler for message handling logic.
-	handler Handler
+	// The reducer for message handling logic.
+	reducer Reducer
 
 	// The buffered channel that incoming messages are written to.
-	input chan Message
+	input chan messageWithResponder
 
 	// The scale (number of workers) for the task.
 	scale int
 }
 
-// New returns a new task with the given handler and buffer capacity. The
+// New returns a new task with the given reducer and buffer capacity. The
 // buffer capacity is the number of messages that can be buffered for
 // processing before the task can no longer accept more messages (until space
 // in the buffer is freed up by processing messages in the buffer).
-func New(handler Handler, opts Options) Task {
+func New(reducer Reducer, opts Options) Task {
 	return &task{
-		handler: handler,
-		input:   make(chan Message, opts.Cap),
+		reducer: reducer,
+		input:   make(chan messageWithResponder, opts.Cap),
 		scale:   opts.Scale,
 	}
 }
@@ -107,7 +117,8 @@ func (task *task) Run(ctx context.Context) {
 			case <-ctx.Done():
 				return
 			case message := <-task.input:
-				task.handle(flatten(message))
+				message.responder <- task.reduce(flatten(message.message))
+				close(message.responder)
 			}
 		}
 	}
@@ -126,26 +137,32 @@ func (task *task) Run(ctx context.Context) {
 // true indicates the message was sent, and false indicates that the task
 // currently has a full buffer and won't accept the message. In the latter case
 // the returned channel will be nil.
-func (task *task) Send(m Message) bool {
+func (task *task) Send(message Message) (<-chan Messages, bool) {
+	responder := make(chan Messages, 1)
+	m := messageWithResponder{message: message, responder: responder}
 	select {
 	case task.input <- m:
-		return true
+		return responder, true
 	default:
-		return false
+		return nil, false
 	}
 }
 
-// handle a message sent to the Task. It is assumed that the message is
-// flattened.
-func (task *task) handle(m Message) {
-	switch m := m.(type) {
+// reduce will handle the reduction of a given message for a task. It is
+// assumed that the message is flattened. It will always return a `Messages`
+// type which contains the responses of the reducer for the given message(s).
+// The returned `Messages` is flattened.
+func (task *task) reduce(message Message) Messages {
+	messages := Messages{}
+	switch message := message.(type) {
 	case Messages:
-		for _, msg := range m {
-			task.handler.Handle(task, msg)
+		for _, msg := range message {
+			messages = append(messages, task.reducer.Reduce(task, msg))
 		}
 	default:
-		task.handler.Handle(task, m)
+		messages = append(messages, task.reducer.Reduce(task, message))
 	}
+	return flatten(messages).(Messages)
 }
 
 // flatten takes a message and effectively flattens it out to depth 1, where
@@ -191,7 +208,7 @@ func NewRouter(r Router) Sender {
 
 // Send implements the `Sender` interface. If the resolver returns a nil Sender,
 // it signifies that the message is not to be sent anywhere.
-func (r *router) Send(message Message) bool {
+func (r *router) Send(message Message) (<-chan Messages, bool) {
 	sender := func() Sender {
 		r.rMu.Lock()
 		defer r.rMu.Unlock()
@@ -200,5 +217,5 @@ func (r *router) Send(message Message) bool {
 	if sender != nil {
 		return sender.Send(message)
 	}
-	return true
+	return nil, true
 }
