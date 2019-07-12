@@ -20,7 +20,6 @@ func (Ping) IsMessage() {}
 
 // Pong represents a pong.
 type Pong struct{}
-}
 
 // IsMessage implements the `phi.Message` interface.
 func (Pong) IsMessage() {}

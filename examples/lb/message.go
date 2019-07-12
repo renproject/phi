@@ -12,7 +12,6 @@ func (Init) IsMessage() {}
 
 // Done is a message to signal that a worker is done.
 type Done struct{}
-}
 
 // IsMessage implements the `phi.Message` interface.
 func (Done) IsMessage() {}

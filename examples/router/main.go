@@ -65,7 +65,7 @@ func main() {
 			os.Exit(1)
 		}
 		return
-	case <-time.After(10 * time.Second):
+	case <-time.After(time.Second):
 		os.Exit(1)
 	}
 }

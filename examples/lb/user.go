@@ -36,7 +36,7 @@ func NewUser(lb phi.Sender, resultsNeeded int) (User, <-chan struct{}) {
 func (user *User) Handle(self phi.Task, message phi.Message) {
 	switch message := message.(type) {
 	case Init:
-		user.sendAsync(self, message)
+		user.sendAsync(self, message, message.Responder)
 	case Done:
 		user.numResults++
 		if user.numResults >= user.resultsNeeded {
@@ -49,15 +49,15 @@ func (user *User) Handle(self phi.Task, message phi.Message) {
 
 // sendAsync sends a message and asynchronously waits for the response. It will
 // ensure that the message is sent.
-func (user *User) sendAsync(self phi.Task, init Init) {
+func (user *User) sendAsync(self phi.Task, m phi.Message, responder chan phi.Message) {
 	go func() {
-		ok := user.lb.Send(init)
+		ok := user.lb.Send(m)
 		// Ensure that the message is sent
 		for !ok {
 			time.Sleep(10 * time.Millisecond)
-			ok = user.lb.Send(init)
+			ok = user.lb.Send(m)
 		}
-		m := <-init.Responder
+		m := <-responder
 		ok = self.Send(m)
 		// Ensure that the responses get received
 		for !ok {
