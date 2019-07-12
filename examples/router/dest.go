@@ -16,11 +16,11 @@ func NewDestA(name string) DestA {
 	return DestA{name: name}
 }
 
-// Reduce implements the `phi.Reducer` interface.
-func (destA *DestA) Reduce(_ phi.Task, message phi.Message) phi.Message {
-	switch message.(type) {
+// Handle implements the `phi.Handler` interface.
+func (destA *DestA) Handle(_ phi.Task, message phi.Message) {
+	switch m := message.(type) {
 	case MessageA:
-		return Response{msg: destA.name}
+		m.Responder <- Response{msg: destA.name}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
@@ -36,11 +36,11 @@ func NewDestB(name string) DestB {
 	return DestB{name: name}
 }
 
-// Reduce implements the `phi.Reducer` interface.
-func (destB *DestB) Reduce(_ phi.Task, message phi.Message) phi.Message {
-	switch message.(type) {
+// Handle implements the `phi.Handler` interface.
+func (destB *DestB) Handle(_ phi.Task, message phi.Message) {
+	switch m := message.(type) {
 	case MessageB:
-		return Response{msg: destB.name}
+		m.Responder <- Response{msg: destB.name}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
@@ -56,11 +56,11 @@ func NewDestC(name string) DestC {
 	return DestC{name: name}
 }
 
-// Reduce implements the `phi.Reducer` interface.
-func (destC *DestC) Reduce(_ phi.Task, message phi.Message) phi.Message {
-	switch message.(type) {
+// Handle implements the `phi.Handler` interface.
+func (destC *DestC) Handle(_ phi.Task, message phi.Message) {
+	switch m := message.(type) {
 	case MessageC:
-		return Response{msg: destC.name}
+		m.Responder <- Response{msg: destC.name}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
