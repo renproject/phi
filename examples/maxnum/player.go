@@ -26,11 +26,11 @@ func (player *Player) ID() uint {
 	return player.id
 }
 
-// Reduce implements the `phi.Reducer` interface.
-func (player *Player) Reduce(_ phi.Task, message phi.Message) phi.Message {
+// Handle implements the `phi.Handler` interface.
+func (player *Player) Handle(_ phi.Task, message phi.Message) {
 	switch message := message.(type) {
 	case Begin:
-		return PlayerNum{from: player.id, player: player.id, num: player.num}
+		message.Responder <- PlayerNum{from: player.id, player: player.id, num: player.num}
 	case PlayerNum:
 		if _, ok := player.seen[message.player]; !ok {
 			player.seen[message.player] = message.num
@@ -40,11 +40,11 @@ func (player *Player) Reduce(_ phi.Task, message phi.Message) phi.Message {
 			}
 			if uint(len(player.seen)) == player.players {
 				done := Done{player: player.id, max: player.currentMax}
-				return phi.Messages{message, done}
+				message.Responder <- phi.Messages{message, done}
 			}
-			return message
+			message.Responder <- message
 		}
-		return nil
+		message.Responder <- phi.Messages{}
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
