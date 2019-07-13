@@ -124,8 +124,7 @@ func (task *task) Run(ctx context.Context) {
 // interface). It returns a channel to which the (possibly nil) response will
 // be written, and a bool indicating whether the message was able to be sent;
 // true indicates the message was sent, and false indicates that the task
-// currently has a full buffer and won't accept the message. In the latter case
-// the returned channel will be nil.
+// currently has a full buffer and won't accept the message.
 func (task *task) Send(m Message) bool {
 	select {
 	case task.input <- m:
