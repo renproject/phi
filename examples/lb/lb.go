@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/renproject/phi"
@@ -11,9 +12,13 @@ type LB struct {
 	id int
 }
 
-// Reduce implements the `phi.Reducer` interface. We simulate a slow task by
+// Handle implements the `phi.Handler` interface. We simulate a slow task by
 // simply sleeping for a time before returning.
-func (LB) Reduce(_ phi.Task, _ phi.Message) phi.Message {
+func (LB) Handle(_ phi.Task, m phi.Message) {
+	init, ok := m.(Init)
+	if !ok {
+		panic(fmt.Errorf("unexpected message type=%T", m))
+	}
 	time.Sleep(time.Second)
-	return Done{}
+	init.Responder <- Done{}
 }

@@ -45,15 +45,15 @@ func main() {
 
 	// Send a message that should be routed to each of the three destinations.
 	var ok bool
-	_, ok = userTask.Send(MessageA{})
+	ok = userTask.Send(MessageA{Responder: make(chan phi.Message, 1)})
 	if !ok {
 		panic("could not send message to router")
 	}
-	_, ok = userTask.Send(MessageB{})
+	ok = userTask.Send(MessageB{Responder: make(chan phi.Message, 1)})
 	if !ok {
 		panic("could not send message to router")
 	}
-	_, ok = userTask.Send(MessageC{})
+	ok = userTask.Send(MessageC{Responder: make(chan phi.Message, 1)})
 	if !ok {
 		panic("could not send message to router")
 	}

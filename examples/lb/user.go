@@ -28,15 +28,15 @@ func NewUser(lb phi.Sender, resultsNeeded int) (User, <-chan struct{}) {
 	}, done
 }
 
-// Reduce implements the `phi.Reducer` interface. Upon receiving an `Init`
+// Handle implements the `phi.Handler` interface. Upon receiving an `Init`
 // message, the user will then send this to the load balancer. Once receiving
 // the corresponding result, it will update the number of results it has seen.
 // Once it has seen `resultsNeeded` responses, it will close the done channel,
 // signalling that it has finished.
-func (user *User) Reduce(self phi.Task, message phi.Message) phi.Message {
-	switch message.(type) {
+func (user *User) Handle(self phi.Task, message phi.Message) {
+	switch message := message.(type) {
 	case Init:
-		user.sendAsync(self, message)
+		user.sendAsync(self, message, message.Responder)
 	case Done:
 		user.numResults++
 		if user.numResults >= user.resultsNeeded {
@@ -45,28 +45,24 @@ func (user *User) Reduce(self phi.Task, message phi.Message) phi.Message {
 	default:
 		panic(fmt.Sprintf("unexpected message type %T", message))
 	}
-
-	return nil
 }
 
 // sendAsync sends a message and asynchronously waits for the response. It will
 // ensure that the message is sent.
-func (user *User) sendAsync(self phi.Task, message phi.Message) {
+func (user *User) sendAsync(self phi.Task, m phi.Message, responder chan phi.Message) {
 	go func() {
-		responder, ok := user.lb.Send(message)
+		ok := user.lb.Send(m)
 		// Ensure that the message is sent
 		for !ok {
 			time.Sleep(10 * time.Millisecond)
-			responder, ok = user.lb.Send(message)
+			ok = user.lb.Send(m)
 		}
-		messages := <-responder
-		for _, m := range messages {
-			_, ok = self.Send(m)
-			// Ensure that the responses get received
-			for !ok {
-				time.Sleep(10 * time.Millisecond)
-				_, ok = self.Send(m)
-			}
+		m := <-responder
+		ok = self.Send(m)
+		// Ensure that the responses get received
+		for !ok {
+			time.Sleep(10 * time.Millisecond)
+			ok = self.Send(m)
 		}
 	}()
 }
