@@ -17,9 +17,12 @@ jobs:
             go get -u golang.org/x/lint/golint
             go get -u github.com/loongy/covermerge
             go get -u github.com/mattn/goveralls
+            go get -u github.com/jstemmer/go-junit-report
       - run:
           name: Run tests
-          command: go test -v ./...
+          command: go test -v ./... 2>&1 | go-junit-report > report.xml
+      - store_test_results:
+          path: report.xml
       - run:
           name: Run task examples
           command: ./examples/run_examples.sh
