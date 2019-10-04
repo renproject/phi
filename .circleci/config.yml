@@ -20,9 +20,11 @@ jobs:
             go get -u github.com/jstemmer/go-junit-report
       - run:
           name: Run tests
-          command: go test -v ./... 2>&1 | go-junit-report > report.xml
+          command: |
+            mkdir -p test-results/tests
+            go test -v ./... 2>&1 | go-junit-report > test-results/tests/report.xml
       - store_test_results:
-          path: report.xml
+          path: test-results
       - run:
           name: Run task examples
           command: ./examples/run_examples.sh
