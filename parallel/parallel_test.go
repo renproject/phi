@@ -1,4 +1,4 @@
-package co_test
+package parallel_test
 
 import (
 	"fmt"

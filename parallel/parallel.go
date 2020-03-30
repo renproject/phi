@@ -1,4 +1,4 @@
-package co
+package parallel
 
 import (
 	"fmt"

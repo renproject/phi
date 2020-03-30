@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	"github.com/renproject/phi/co"
+	"github.com/renproject/phi/parallel"
 )
 
 // Message represents a message that is sent between tasks for communication.
@@ -108,7 +108,7 @@ func (task *task) Run(ctx context.Context) {
 	if task.scale < 2 {
 		loop()
 	} else {
-		co.ParForAll(task.scale, func(i int) { loop() })
+		parallel.ParForAll(task.scale, func(i int) { loop() })
 	}
 }
 

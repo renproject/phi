@@ -1,4 +1,4 @@
-package co_test
+package parallel_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCogo(t *testing.T) {
+func TestParallel(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Cogo Suite")
+	RunSpecs(t, "Parallel Suite")
 }

@@ -1,7 +1,7 @@
 package phi
 
 import (
-	"github.com/renproject/phi/co"
+	"github.com/renproject/phi/parallel"
 	"github.com/renproject/phi/task"
 )
 
@@ -37,11 +37,11 @@ var (
 // Package `co` re-exports
 var (
 	// ParBegin is a function re-exported from package `co`.
-	ParBegin = co.ParBegin
+	ParBegin = parallel.ParBegin
 
 	// ParForAll is a function re-exported from package `co`.
-	ParForAll = co.ParForAll
+	ParForAll = parallel.ParForAll
 
 	// ForAll is a function re-exported from package `co`.
-	ForAll = co.ForAll
+	ForAll = parallel.ForAll
 )
