@@ -27,17 +27,11 @@ type (
 
 	// Handler is an interface re-exported from package `task`.
 	Handler = task.Handler
-
-	// Router is an interface re-exported from package `task`.
-	Router = task.Router
 )
 
 var (
 	// New is a function re-exported from package `task`.
 	New = task.New
-
-	// NewRouter is a function re-exported from package `task`.
-	NewRouter = task.NewRouter
 )
 
 // Package `co` re-exports
