@@ -51,7 +51,7 @@ type Task interface {
 // state. The `Task` argument is the parent task of the Handler, and can be used
 // by a Handler to send messages to itself.
 type Handler interface {
-	Handle(Task, Message)
+	Handle(Message)
 }
 
 // Router represents something that can route different messages to different
@@ -140,10 +140,10 @@ func (task *task) handle(m Message) {
 	switch m := m.(type) {
 	case Messages:
 		for _, msg := range m {
-			task.handler.Handle(task, msg)
+			task.handler.Handle(msg)
 		}
 	default:
-		task.handler.Handle(task, m)
+		task.handler.Handle(m)
 	}
 }
 
