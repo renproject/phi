@@ -2,7 +2,6 @@ package task
 
 import (
 	"context"
-	"sync"
 
 	"github.com/renproject/phi/co"
 )
@@ -52,13 +51,6 @@ type Task interface {
 // by a Handler to send messages to itself.
 type Handler interface {
 	Handle(Message)
-}
-
-// Router represents something that can route different messages to different
-// senders. Returning a nil sender from `Route` signifies that the message is
-// not to be sent anywhere.
-type Router interface {
-	Route(Message) Sender
 }
 
 // Options are passed when constructing a `Task`. The `Cap` is the buffer
@@ -169,35 +161,4 @@ func flatten(message Message) Message {
 	default:
 		return message
 	}
-}
-
-// router is an implementation of a `Sender` that is a resolver.
-type router struct {
-	rMu *sync.Mutex
-	r   Router
-}
-
-// NewRouter returns a new sender that represents a Router. The given Router
-// determines how the sender routes messages; any message `m` that is sent to
-// this sender will be sent to the sender determined by the Router through
-// `Route(m)`.
-func NewRouter(r Router) Sender {
-	return &router{
-		rMu: new(sync.Mutex),
-		r:   r,
-	}
-}
-
-// Send implements the `Sender` interface. If the resolver returns a nil Sender,
-// it signifies that the message is not to be sent anywhere.
-func (r *router) Send(message Message) bool {
-	sender := func() Sender {
-		r.rMu.Lock()
-		defer r.rMu.Unlock()
-		return r.r.Route(message)
-	}()
-	if sender != nil {
-		return sender.Send(message)
-	}
-	return true
 }
