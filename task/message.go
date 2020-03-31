@@ -1,6 +1,8 @@
 package task
 
-import "context"
+import (
+	"context"
+)
 
 // Request is a marker interface. It requires no explicit functionality, and
 // only exists so that programmers cannot accidentally send types as requests
@@ -34,15 +36,4 @@ type Message interface {
 	// current goroutine. Waiting is safe for concurrent use, but will only
 	// return a non-nil Response to at most one caller.
 	Wait(context.Context) (Response, error)
-}
-
-// Messages is a collection of messages. Handlers will never receive this type,
-// because it will always be flattened before being sent to the Handler.
-type Messages []Message
-
-// IsMessage implements the Message interface for the Messages type.
-func (Messages) IsMessage() {}
-
-func NewMessage(req Request, res *Response) Message {
-
 }

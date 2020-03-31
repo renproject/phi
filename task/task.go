@@ -63,7 +63,7 @@ func (task *task) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case message := <-task.input:
-			task.handle(flatten(message))
+			task.handler.Handle(message)
 		}
 	}
 }
@@ -75,39 +75,5 @@ func (task *task) Send(ctx context.Context, message Message) error {
 		return ctx.Err()
 	case task.input <- message:
 		return nil
-	}
-}
-
-func (task *task) handle(message Message) {
-	switch message := message.(type) {
-	case Messages:
-		for _, message := range message {
-			task.handler.Handle(message)
-		}
-	default:
-		task.handler.Handle(message)
-	}
-}
-
-// flatten takes a Message and, if it is of the Messages type, flattens it so
-// that none of the elements of the Messages slice are themselves of the
-// Messages type. If flatten receives a Message that is not of the Messages
-// type, then it will return the Message unmodified.
-func flatten(message Message) Message {
-	switch message := message.(type) {
-	case Messages:
-		msgs := Messages{}
-		for _, msg := range message {
-			m := flatten(msg)
-			switch m := m.(type) {
-			case Messages:
-				msgs = append(msgs, m...)
-			default:
-				msgs = append(msgs, m)
-			}
-		}
-		return msgs
-	default:
-		return message
 	}
 }

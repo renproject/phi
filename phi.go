@@ -10,9 +10,6 @@ type (
 	// Message is an interface re-exported from package `task`.
 	Message = task.Message
 
-	// Messages is struct re-exported from package `task`.
-	Messages = task.Messages
-
 	// Runner is an interface re-exported from package `task`.
 	Runner = task.Runner
 
@@ -21,9 +18,6 @@ type (
 
 	// Task is an interface re-exported from package `task`.
 	Task = task.Task
-
-	// Options is a struct re-exported from package `task`.
-	Options = task.Options
 
 	// Handler is an interface re-exported from package `task`.
 	Handler = task.Handler
