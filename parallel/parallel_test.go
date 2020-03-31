@@ -10,7 +10,7 @@ import (
 	. "github.com/renproject/phi"
 )
 
-var _ = Describe("Concurrency", func() {
+var _ = Describe("Parallel", func() {
 
 	Context("when using parbegin", func() {
 
